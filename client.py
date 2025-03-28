@@ -1,6 +1,18 @@
+from typing import Dict, Tuple, List
+
 import requests
 
-class ClientAPI:
+State = Dict[str, str]
+Goal = Dict[str, str]
+Theorem = Dict[str, str]
+
+class ClientError(Exception):
+    def __init__(self, code, message):
+        self.code = code
+        self.message = message
+
+
+class ProofAssistantClientAPI:
     """
     A simple client API for interacting with the proof assistant Flask server.
     """
@@ -9,8 +21,7 @@ class ClientAPI:
         Initialize the client by setting the base URL, logging in, and fetching theorem descriptions.
         """
         self.base_url = base_url.rstrip("/")
-        self.state = None
-        self.descr_thms = []
+        self.descr_thms = {}
         self.login = None
         self._login()
         self._get_thms()
@@ -22,9 +33,9 @@ class ClientAPI:
         url = f"{self.base_url}/login"
         response = requests.get(url)
         if response.status_code == 200:
-            self.login = response.json().get('output')
+            self.login = response.json()['idx']
         else:
-            raise Exception(f"Login Error: {response.status_code} {response.text}")
+            raise ClientError(response.status_code, response.text)
 
     def _get_thms(self):
         """
@@ -33,66 +44,74 @@ class ClientAPI:
         url = f"{self.base_url}/get_thms"
         response = requests.get(url)
         if response.status_code == 200:
-            self.descr_thms = response.json().get('output', [])
+            self.descr_thms = response.json()
         else:
-            raise Exception(f"Error fetching theorems: {response.status_code} {response.text}")
+            raise ClientError(response.status_code, response.text)
 
-    def num_thm(self) -> int:
+    def sections(self) -> List[str]:
+        """
+        Get all available sections
+        """
+        return list(self.descr_thms.keys())
+    def num_thm(self, section: str) -> int:
         """
         Get the number of available theorems.
         """
-        return len(self.descr_thms)
+        return len(self.descr_thms[section])
 
-    def show_thm(self, idx: int):
+    def show_thm(self, section: str, idx: int) -> List[Theorem]:
         """
         Retrieve the theorem description at the specified index.
         """
-        if idx < 0 or idx >= self.num_thm():
-            raise IndexError("Theorem index out of range")
-        return self.descr_thms[idx]
+        return self.descr_thms[section][idx]
 
-    def start_thm(self, idx: int):
+    def start_thm(self, section: str, idx: int) -> Tuple[State, Goal]:
         """
         Start a theorem proving session for the theorem at the given index.
         """
-        if idx < 0 or idx >= self.num_thm():
+        if idx < 0 or idx >= self.num_thm(section):
             raise IndexError("Theorem index out of range")
         url = f"{self.base_url}/start_thm"
-        payload = {'login': self.login, 'idx': idx}
+        payload = {'login': self.login, 'section': section, 'idx': idx}
         response = requests.post(url, json=payload)
         if response.status_code == 200:
-            output = response.json().get('output', {})
-            self.state = output.get('state')
-            return output
+            output = response.json()
+            return output['state'], output['goals']
         else:
-            raise Exception(f"Error starting theorem: {response.status_code} {response.text}")
+            raise ClientError(response.status_code, response.text)
 
-    def run_tac(self, tactic: str):
+    def run_tac(self, state: State, tactic: str) -> Tuple[State, Goal]:
         """
         Execute a given tactic on the current proof state.
         """
-        if self.state is None:
-            raise Exception("Error: No theorem session started. Please call start_thm first.")
         url = f"{self.base_url}/run_tac"
-        payload = {'login': self.login, 'state': self.state, 'tactic': tactic}
+        payload = {'login': self.login, 'state': state, 'tactic': tactic}
         response = requests.post(url, json=payload)
         if response.status_code == 200:
-            output = response.json().get('output', {})
-            self.state = output.get('state')
-            return output
+            output = response.json()
+            return output['state'], output['goals']
         else:
-            raise Exception(f"Error running tactic: {response.status_code} {response.text}")
+            raise ClientError(response.status_code, response.text)
+
+def goals_to_str(goals):
+    pp = "Status: finished\n" if not goals else "Status: ongoing\n"
+    for k, goal in enumerate(goals, start=1):
+        pp += f"Goal {k}:\n"
+        pp += goal['pp'] + '\n'
+    return pp
 
 # Example usage:
 if __name__ == '__main__':
-    try:
-        client = ClientAPI("http://localhost:5000")
-        print("Theorem 0 description:", client.show_thm(0))
-        start_output = client.start_thm(0)
-        print("Started theorem session:", start_output)
-        tactics = ['intros.', 'apply H0.', 'exact H.']
-        for step in tactics:
-            output = client.run_tac(step)
-            print("Updated state and goals after tactic:", output)
-    except Exception as e:
-        print("An error occurred:", e)
+    client = ProofAssistantClientAPI("http://127.0.0.1:5000")
+    for section in ['introduction', 'logic', 'math']:
+        for k in range(client.num_thm(section)):
+            thm = client.show_thm(section, k)
+            print(thm['name'], thm['statement'])
+            print("Started theorem session")
+            state, goals = client.start_thm(section, k)
+            print(goals_to_str(goals))
+            tactics = thm['solution']
+            for step in tactics:
+                print(step)
+                state, output = client.run_tac(state, step)
+            print(goals_to_str(output))
