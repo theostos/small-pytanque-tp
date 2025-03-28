@@ -1,0 +1,19 @@
+[
+	{
+		"name": "involution_injective",
+		"doc": "Involution are one-to-one.",
+		"statement": "forall x y, f x = f y -> x = y",
+		"solution": [
+				"intros x y H.",
+				"rewrite <- Hinv with (x := x).",
+				"rewrite <- Hinv with (x := y).",
+				"rewrite H.",
+				"reflexivity."
+				],
+		"premises": [
+				"Variable A : Type.",
+				"Variable f : A -> A.",
+				"Hypothesis Hinv : forall x, f (f x) = x."
+				]
+	}
+]

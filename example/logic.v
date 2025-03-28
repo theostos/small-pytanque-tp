@@ -1,6 +1,7 @@
 Theorem Modus_ponens : forall P Q : Prop, P -> (P -> Q) -> Q.
 Proof.
-  intros.
+  intros P Q.
+  intros H H0.
   apply H0.
   exact H.
 Qed.
@@ -8,7 +9,7 @@ Qed.
 Theorem Modus_tollens : forall P Q : Prop, ~Q /\ (P -> Q) -> ~P.
 Proof.
   unfold not.
-  intros.
+  intros P Q H H0.
   inversion H.
   apply H1.
   apply H2.
@@ -18,7 +19,7 @@ Qed.
 Theorem Disjunctive_syllogism : forall P Q : Prop, (P \/ Q) -> ~P -> Q.
 Proof.
   unfold not.
-  intros.
+  intros P Q H H0.
   inversion H.
   contradiction.
 

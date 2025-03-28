@@ -5,10 +5,15 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 # Configuration parameters
-NUM_PET_SERVER = 4
-SRC_FILE = "example/ex1.v"
-DESCR_FILE = "example/ex1.json"
+NUM_PET_SERVER = 1
 
+dict_section = {
+    "introduction":{"source":"example/intro.v", "descr": "example/intro.json"},
+    "logic":{"source":"example/logic.v", "descr": "example/logic.json"},
+    "math":{"source":"example/math.v", "descr": "example/math.json"},
+}
+
+dict_descr = {}
 # Global index to balance load across pet servers
 server_idx_counter = 0
 
@@ -18,8 +23,10 @@ for pet in pytanques:
     pet.connect()
 
 # Load theorem descriptions from the JSON file
-with open(DESCR_FILE, 'r') as file:
-    descr_content = json.load(file)
+
+for section, output in dict_section.items():
+    with open(output['descr'], 'r') as file:
+        dict_descr[section] = json.load(file)
 
 @app.route('/login', methods=['GET'])
 def login():
@@ -27,16 +34,16 @@ def login():
     Return a server index (integer in 0 .. NUM_PET_SERVER-1) to help balance the load across pet servers.
 
     Returns:
-            - status_code: HTTP status (200 on success)
+            - status_code
             - output: the assigned server index
     """
     global server_idx_counter
     try:
         assigned_idx = server_idx_counter
         server_idx_counter = (server_idx_counter + 1) % NUM_PET_SERVER
-        return jsonify({"status_code": 200, "output": assigned_idx})
+        return jsonify({"idx": assigned_idx}), 200
     except Exception as e:
-        return jsonify({"status_code": 500, "output": str(e)})
+        return str(e), 500
 
 @app.route('/start_thm', methods=['POST'])
 def start_thm():
@@ -48,25 +55,28 @@ def start_thm():
         - login (int): the server index assigned from /login.
 
     Returns:
-            - status_code: 200 on success
+            - status_code
             - output: A dictionary containing:
                 - state: The initial proof state (in JSON format)
                 - goals: A list of pretty-printed goals
     """
     try:
         data = request.get_json()
+        section = data['section']
         thm_idx = data['idx']
         login_idx = data['login']
-        thm_name = descr_content[thm_idx]['name']
+        thm_name = dict_descr[section][thm_idx]['name']
+
+        filepath = dict_section[section]['source']
 
         worker = pytanques[login_idx]
-        state = worker.start(file=SRC_FILE, thm=thm_name)
+        state = worker.start(file=filepath, thm=thm_name)
         goals = worker.goals(state)
-        pretty_goals = [goal.pp for goal in goals]
-        output = {"state": state.to_json(), "goals": pretty_goals}
-        return jsonify({"status_code": 200, "output": output})
+        goals_json = [goal.to_json() for goal in goals]
+        output = {"state": state.to_json(), "goals": goals_json}
+        return jsonify(output), 200
     except Exception as e:
-        return jsonify({"status_code": 500, "output": str(e)})
+        return str(e), 500
 
 @app.route('/run_tac', methods=['POST'])
 def run_tac():
@@ -93,11 +103,11 @@ def run_tac():
         worker = pytanques[login_idx]
         new_state = worker.run_tac(current_state, tactic, verbose=False, timeout=10)
         goals = worker.goals(new_state)
-        goals = [goal.pp for goal in goals]
-        output = {"state": new_state.to_json(), "goals": goals}
-        return jsonify({"status_code": 200, "output": output})
+        goals_json = [goal.to_json() for goal in goals]
+        output = {"state": new_state.to_json(), "goals": goals_json}
+        return jsonify(output), 200
     except Exception as e:
-        return jsonify({"status_code": 500, "output": str(e)})
+        return str(e), 500
 
 @app.route('/get_thms', methods=['GET'])
 def get_thms():
@@ -109,9 +119,9 @@ def get_thms():
             - output: the content of the description file
     """
     try:
-        return jsonify({"status_code": 200, "output": descr_content})
+        return jsonify(dict_descr), 200
     except Exception as e:
-        return jsonify({"status_code": 500, "output": str(e)})
+        return str(e), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

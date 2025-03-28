@@ -1,0 +1,101 @@
+[
+	{
+		"name": "Modus_ponens",
+		"statement": "forall P Q : Prop, P -> (P -> Q) -> Q",
+		"solution": [
+				"intros P Q.",
+				"intros H H0.",
+				"apply H0.",
+				"exact H."
+				],
+		"premises": []
+	},
+	{
+		"name": "Modus_tollens",
+		"statement": "forall P Q : Prop, ~Q /\\ (P -> Q) -> ~P",
+		"solution": [
+				"unfold not.",
+				"intros P Q H H0.",
+				"inversion H.",
+				"apply H1.",
+				"apply H2.",
+				"exact H0."
+				],
+		"premises": []
+	},
+	{
+		"name": "Disjunctive_syllogism",
+		"statement": "forall P Q : Prop, (P \\/ Q) -> ~P -> Q",
+		"solution": [
+				"unfold not.",
+				"intros P Q H H0.",
+				"inversion H.",
+				"contradiction.",
+				"exact H1."
+				],
+		"premises": []
+	},
+	{
+		"name": "DeMorgan1",
+		"statement": "forall P Q : Prop, ~P \\/ ~Q -> ~(P /\\ Q)",
+		"solution": [
+				"unfold not.",
+		  		"intros.",
+		  		"inversion H0.",
+		  		"inversion H.",
+		  		"apply H3.",
+		  		"exact H1.",
+		  		"apply H3.",
+		  		"apply H2."
+		  		],
+		"premises": []
+	},
+	{
+		"name": "DeMorgan2",
+		"statement": "forall P Q : Prop, ~P /\\ ~Q -> ~(P \\/ Q)",
+		"solution": [
+				"unfold not.",
+		  		"intros.",
+		  		"inversion H.",
+		  		"inversion H0.",
+		  		"apply H1.",
+		  		"apply H3.",
+		  		"apply H2.",
+		  		"apply H3."
+				],
+		"premises": []
+	},
+	{
+		"name": "DeMorgan3",
+		"statement": "forall P Q : Prop, ~(P \\/ Q) -> ~P /\\ ~Q",
+		"solution": [
+				"unfold not.",
+				"intros.",
+				"split.",
+				"intros.",
+				"apply H.",
+				"left.",
+				"exact H0.",
+				"intros.",
+				"apply H.",
+				"right.",
+				"exact H0."
+				],
+		"premises": []
+	},
+	{
+		"name": "NotNot_LEM",
+		"statement": "forall P : Prop, ~ ~(P \\/ ~P)",
+		"solution": [
+				"unfold not.",
+				"intros.",
+				"apply H.",
+				"right.",
+				"intros.",
+				"apply H.",
+				"left.",
+				"exact H0."
+				],
+		"premises": []
+	}
+]

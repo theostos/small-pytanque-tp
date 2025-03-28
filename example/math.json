@@ -1,0 +1,140 @@
+[
+	{
+		"name": "unique_max",
+		"statement": "(A : R -> Prop) (x y : R) : x is_a_max_of A -> y is_a_max_of A -> x = y",
+		"solution": [
+				"intros [HxA Hx] [HyA Hy].",
+				"apply Rle_antisym.",
+				"-",
+				"apply Hy; assumption.",
+				"-",
+				"apply Hx; assumption."
+				],
+		"premises": [
+				"Definition up_bounds (A : R -> Prop) : R -> Prop :=\n fun x => forall a, A a -> a <= x.",
+				"Definition is_maximum (a : R) (A : R -> Prop) : Prop :=\n A a /\\ up_bounds A a.",
+				"Notation \"a 'is_a_max_of' A\" := (is_maximum a A) (at level 70).",
+				"Rle_antisym: forall r1 r2 : R, r1 <= r2 -> r2 <= r1 -> r1 = r2"
+				]
+	},
+	{
+		"name": "inf_lt",
+		"statement": "(A : R -> Prop) (x : R) : x is_an_inf_of A -> forall y, x < y -> exists a, A a /\\ a < y",
+		"solution": [
+				"intros [Hlb Hmax] y Hxy.",
+				"destruct (classic (exists a, A a /\\ a < y)) as [Hex|Hnex].",
+				"-",
+				"exact Hex.",
+				"-",
+				"assert (Hy_lb: forall a, A a -> y <= a).",
+				"{",
+				"intros a Ha.",
+				"destruct (Rtotal_order a y) as [Hlt | Hrest].",
+				"-",
+				"exfalso.",
+				"apply Hnex.",
+				"exists a.",
+				"split; assumption.",
+				"-",
+				"destruct Hrest as [Heq|Hgt].",
+				"+",
+				"lra.",
+				"+",
+				"apply Rlt_le.",
+				"exact Hgt.",
+				"}",
+				"specialize (Hmax y Hy_lb).",
+				"lra."
+				],
+		"premises": [
+				"Definition up_bounds (A : R -> Prop) : R -> Prop :=\n fun x => forall a, A a -> a <= x.",
+				"Definition is_maximum (a : R) (A : R -> Prop) : Prop :=\n A a /\\ up_bounds A a.",
+				"Notation \"a 'is_a_max_of' A\" := (is_maximum a A) (at level 70).",
+				"Definition low_bounds (A : R -> Prop) : R -> Prop :=\n fun x => forall a, A a -> x <= a.",
+				"Definition is_inf (x : R) (A : R -> Prop) : Prop :=\n x is_a_max_of (low_bounds A).",
+				"Notation \"x 'is_an_inf_of' A\" := (is_inf x A) (at level 70).",
+				"classic: forall P : Prop, P \\/ ~ P",
+				"Rtotal_order: forall r1 r2 : R, r1 < r2 \\/ r1 = r2 \\/ r1 > r2"
+				]
+	},
+	{
+		"name": "le_of_le_add_eps",
+		"statement": "(x y : R) : (forall eps, eps > 0 -> y <= x + eps) -> y <= x",
+		"solution": [
+				"intros H.",
+				"destruct (Rtotal_order y x) as [Hgt | [Heq | Hlt]].",
+				"-",
+				"lra.",
+				"-",
+				"lra.",
+				"-",
+				"set (eps := (y - x) / 2).",
+				"assert (eps_pos: 0 < eps) by (apply Rdiv_lt_0_compat; lra).",
+				"specialize (H eps eps_pos).",
+				"assert (x_add_eps_lt_y: x + eps < y) by (unfold eps; lra).",
+				"lra."
+				],
+		"premises": [
+				"Rtotal_order: forall r1 r2 : R, r1 < r2 \\/ r1 = r2 \\/ r1 > r2",
+				"Rdiv_lt_0_compat: forall a b : R, 0 < a -> 0 < b -> 0 < a / b"
+				]
+	},
+	{
+		"name": "le_lim",
+		"statement": "(x y : R) (u : nat -> R) : limit u x -> (forall n, y <= u n) -> y <= x",
+		"solution": [
+				"intros Hlim Hall.",
+				"apply le_of_le_add_eps.",
+				"intros eps Heps.",
+				"destruct (Hlim eps Heps) as [N HN].",
+				"assert (Hyn: y <= u N) by (apply Hall).",
+				"assert (Hcalc: u N - x <= Rabs (u N - x)) by apply Rle_abs.",
+				"assert (Hsum: x + Rabs (u N - x) <= x + eps) by (apply Rplus_le_compat_l; apply HN; lia).",
+				"lra."
+				],
+		"premises": [
+				"Rabs: R -> R",
+				"Definition limit (u : nat -> R) (l : R) : Prop :=\n forall eps, eps > 0 -> exists N, forall n, (n >= N)%nat -> Rabs (u n - l) <= eps",
+				"le_lim (x y : R) (u : nat -> R) :\n limit u x -> (forall n, y <= u n) -> y <= x",
+				"le_of_le_add_eps: forall x y : R, (forall eps : R, eps > 0 -> y <= x + eps) -> y <= x",
+				"Rle_abs: forall x : R, x <= Rabs x",
+				"Rplus_le_compat_l: forall r r1 r2 : R, r1 <= r2 -> r + r1 <= r + r2"
+				]
+	},
+	{
+		"name": "inv_succ_pos",
+		"statement": "forall n : nat, 0 < / (INR (n + 1))",
+		"solution": [
+				"intro n.",
+				"apply Rinv_0_lt_compat.",
+				"apply (lt_INR 0 (n+1)).",
+				"lia."
+				],
+		"premises": [
+				"INR: nat -> R",
+				"Rinv_0_lt_compat: forall r : R, 0 < r -> 0 < / r",
+				"lt_INR: forall n m : nat, (n < m)%nat -> INR n < INR m"
+				]
+	},
+	{
+		"name": "limit_inv_succ",
+		"statement": "(eps : R) (Heps : eps > 0) : exists N : nat, forall n, (n >= N)%nat -> / (INR (n + 1)) <= eps",
+		"solution": ["Admitted."],
+		"premises": ["INR: nat -> R"]
+	},
+	{
+		"name": "inf_seq",
+		"statement": "(A : R -> Prop) (x : R) : (x is_an_inf_of A) <-> ((forall a, A a -> x <= a) /\\ exists u : nat -> R, limit u x /\\ forall n, A (u n))",
+		"solution": ["Admitted."],
+		"premises": [
+				"Definition up_bounds (A : R -> Prop) : R -> Prop :=\n fun x => forall a, A a -> a <= x.",
+				"Definition is_maximum (a : R) (A : R -> Prop) : Prop :=\n A a /\\ up_bounds A a.",
+				"Notation \"a 'is_a_max_of' A\" := (is_maximum a A) (at level 70).",
+				"Definition low_bounds (A : R -> Prop) : R -> Prop :=\n fun x => forall a, A a -> x <= a.",
+				"Definition is_inf (x : R) (A : R -> Prop) : Prop :=\n x is_a_max_of (low_bounds A).",
+				"Notation \"x 'is_an_inf_of' A\" := (is_inf x A) (at level 70).",
+				"Rabs: R -> R",
+				"Definition limit (u : nat -> R) (l : R) : Prop :=\n forall eps, eps > 0 -> exists N, forall n, (n >= N)%nat -> Rabs (u n - l) <= eps"
+				]
+	}
+]
