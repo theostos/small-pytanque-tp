@@ -7,7 +7,7 @@ app = Flask(__name__)
 # Configuration parameters
 NUM_PET_SERVER = 1
 
-dict_section = {
+DICT_SECTION = {
     "introduction":{"source":"example/intro.v", "descr": "example/intro.json"},
     "logic":{"source":"example/logic.v", "descr": "example/logic.json"},
     "math":{"source":"example/math.v", "descr": "example/math.json"},
@@ -24,7 +24,7 @@ for pet in pytanques:
 
 # Load theorem descriptions from the JSON file
 
-for section, output in dict_section.items():
+for section, output in DICT_SECTION.items():
     with open(output['descr'], 'r') as file:
         dict_descr[section] = json.load(file)
 
@@ -67,7 +67,7 @@ def start_thm():
         login_idx = data['login']
         thm_name = dict_descr[section][thm_idx]['name']
 
-        filepath = dict_section[section]['source']
+        filepath = DICT_SECTION[section]['source']
 
         worker = pytanques[login_idx]
         state = worker.start(file=filepath, thm=thm_name)
