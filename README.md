@@ -1,6 +1,14 @@
 # small-TP
 
-## Install
+## Notebook
+
+<a target="_blank" href="https://colab.research.google.com/github/theostos/small-pytanque-tp/blob/main/notebook.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a>
+
+## Server
+
+### Install
 
 You should setup a virtual env:
 
@@ -8,7 +16,7 @@ You should setup a virtual env:
 pip install -r requirements.txt
 ```
 
-## Usage
+### Usage
 
 server.py has two global variables (argparse does not work with gunicorn..):
 - NUM_PET_SERVER (default value=4), number of pet-servers to balance load.
