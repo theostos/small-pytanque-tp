@@ -10,10 +10,6 @@
 				"rewrite H.",
 				"reflexivity."
 				],
-		"premises": [
-				"Variable A : Type.",
-				"Variable f : A -> A.",
-				"Hypothesis Hinv : forall x, f (f x) = x."
-				]
+		"premises": []
 	}
 ]
