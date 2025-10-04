@@ -1,5 +1,6 @@
 # small-TP
 
+TP for hands-on session at [AI and Maths conference](https://csd.ens.psl.eu/?ai-and-maths) (@PSL)
 ## Notebook
 
 **To use the notebook, please start the server.**
